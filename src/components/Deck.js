@@ -1,5 +1,6 @@
 import React from 'react';
 import useDeck, { DeckContext } from '../hooks/useDeck';
+import usePresentation from '../hooks/usePresentation';
 import isComponentType from '../utils/isComponentType.js';
 import { useTransition, animated } from 'react-spring';
 
@@ -70,6 +71,24 @@ const Deck = props => {
     props.loop ? true : false
   );
 
+  /* An idea for keeping slides in sync */
+  const syncedDispatch = args => {
+    dispatch(args);
+    sendMessage(args)
+  }
+
+  const handleMessage = args => {
+    dispatch(args)
+  }
+
+  const { 
+    startConnection, 
+    terminateConnection, 
+    sendMessage,
+    errors,
+    isConnected
+  } = usePresentation(handleMessage)
+
   const transitions = useTransition(
     state.currentSlide,
     p => p,
@@ -85,12 +104,17 @@ const Deck = props => {
         overflowX: 'hidden'
       }}
     >
-      <DeckContext.Provider value={[state, dispatch, Slides.length]}>
+      <DeckContext.Provider value={[state, syncedDispatch, Slides.length]}>
         {transitions.map(({ item, props, key }) => {
           const Slide = Slides[item];
           prevSlide = state.currentSlide;
-          return <Slide style={props} />;
-        })}
+          return (
+            <>
+              <Slide style={props} />
+              <button onClick={startConnection}>Start Presentation</button>
+              <button onClick={terminateConnection}>End Presentation</button>
+            </>
+        )})}
       </DeckContext.Provider>
     </div>
   );
